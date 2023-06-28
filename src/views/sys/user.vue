@@ -7,12 +7,19 @@
           <el-input
             v-model="searchModel.username"
             placeholder="Username"
+            clearable
           ></el-input>
           <el-input
             v-model="searchModel.telephone"
-            placeholder="Telephone"
+            placeholder="Phone"
+            clearable
           ></el-input>
-          <el-button type="primary" round icon="el-icon-search">
+          <el-button
+            @click="getUserList"
+            type="primary"
+            round
+            icon="el-icon-search"
+          >
             Search
           </el-button>
         </el-col>
@@ -26,11 +33,19 @@
     <!-- Result List -->
     <el-card>
       <el-table :data="userList" stripe style="width: 100%">
-        <el-table-column type="index" label="#" width="180"> </el-table-column>
-        <el-table-column prop="id" label="ID" width="180"> </el-table-column>
+        <el-table-column label="#" width="180">
+          <template slot-scope="scope">
+            <!-- (pageNo - 1) * pageSize + index + 1 -->
+            {{
+              (searchModel.pageNo - 1) * searchModel.pageSize + scope.$index + 1
+            }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="id" label="User ID" width="180">
+        </el-table-column>
         <el-table-column prop="username" label="Username" width="180">
         </el-table-column>
-        <el-table-column prop="telephone" label="Telephone" width="180">
+        <el-table-column prop="phone" label="Phone" width="180">
         </el-table-column>
         <el-table-column prop="email" label="Email"> </el-table-column>
         <el-table-column label="Operation" width="180"> </el-table-column>
@@ -52,6 +67,7 @@
 </template>
 
 <script>
+import userApi from "@/api/userManage";
 export default {
   data() {
     return {
@@ -64,8 +80,23 @@ export default {
     };
   },
   methods: {
-    handleSizeChange() {},
-    handleCurrentChange() {},
+    handleSizeChange(pageSize) {
+      this.searchModel.pageSize = pageSize;
+      this.getUserList();
+    },
+    handleCurrentChange(pageNo) {
+      this.searchModel.pageNo = pageNo;
+      this.getUserList();
+    },
+    getUserList() {
+      userApi.getUserList(this.searchModel).then((res) => {
+        this.userList = res.data.rows;
+        this.total = res.data.total;
+      });
+    },
+  },
+  created() {
+    this.getUserList();
   },
 };
 </script>
