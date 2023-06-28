@@ -29,7 +29,7 @@
             type="primary"
             circle
             icon="el-icon-plus"
-            @click="openEditUI"
+            @click="openEditUI(null)"
           >
           </el-button>
         </el-col>
@@ -60,7 +60,24 @@
             <el-tag v-else type="danger"> Invalid </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Operation" width="180"> </el-table-column>
+        <el-table-column label="Operation" width="180">
+          <template slot-scope="scope">
+            <el-button
+              @click="openEditUI(scope.row.id)"
+              type="primary"
+              icon="el-icon-edit"
+              circle
+              size="mini"
+            ></el-button>
+            <el-button
+              @click="deleteUser(scope.row)"
+              type="danger"
+              icon="el-icon-delete"
+              circle
+              size="mini"
+            ></el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
 
@@ -91,6 +108,7 @@
           <el-input v-model="userForm.username" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item
+          v-if="userForm.id == null || userForm.id == undefined"
           prop="password"
           label="Password"
           :label-width="formLabelWidth"
@@ -178,8 +196,16 @@ export default {
       this.userForm = {};
       this.$refs.userFormRef.clearValidate();
     },
-    openEditUI() {
-      this.title = "Add User";
+    openEditUI(id) {
+      if (id == null) {
+        this.title = "Add User";
+      } else {
+        this.title = "Edit User";
+        // Find user information by id
+        userApi.getUserById(id).then((res) => {
+          this.userForm = res.data;
+        });
+      }
       this.dialogFormVisible = true;
     },
     handleSizeChange(pageSize) {
@@ -201,7 +227,7 @@ export default {
       this.$refs.userFormRef.validate((valid) => {
         if (valid) {
           // post request
-          userApi.addUser(this.userForm).then((response) => {
+          userApi.saveUser(this.userForm).then((response) => {
             // Show success message
             this.$message({
               message: response.message,
@@ -219,6 +245,32 @@ export default {
           return false;
         }
       });
+    },
+    deleteUser(user) {
+      this.$confirm(
+        `This will delete the user ${user.username}. Continue?`,
+        "Warning",
+        {
+          confirmButtonText: "OK",
+          cancelButtonText: "Cancel",
+          type: "warning",
+        }
+      )
+        .then(() => {
+          userApi.deleteUserById(user.id).then((res) => {
+            this.$message({
+              type: "success",
+              message: res.message,
+            });
+            this.getUserList();
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "Delete canceled",
+          });
+        });
     },
   },
   created() {
